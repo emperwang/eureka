@@ -74,7 +74,7 @@ public class Applications {
 
     @XStreamImplicit
     private AbstractQueue<Application> applications;
-
+    // 名字和 application的映射关系
     private Map<String, Application> appNameApplicationMap = new ConcurrentHashMap<String, Application>();
     private Map<String, AbstractQueue<InstanceInfo>> virtualHostNameAppMap = new ConcurrentHashMap<String, AbstractQueue<InstanceInfo>>();
     private Map<String, AbstractQueue<InstanceInfo>> secureVirtualHostNameAppMap = new ConcurrentHashMap<String, AbstractQueue<InstanceInfo>>();
@@ -256,6 +256,7 @@ public class Applications {
      * app list synchronization mechanism.
      * @param instanceCountMap the map to populate
      */
+    // 注册实例数量的 更新
     public void populateInstanceCountMap(TreeMap<String, AtomicInteger> instanceCountMap) {
         for (Application app : this.getRegisteredApplications()) {
             for (InstanceInfo info : app.getInstancesAsIsFromEureka()) {

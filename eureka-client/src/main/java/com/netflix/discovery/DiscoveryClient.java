@@ -946,7 +946,7 @@ public class DiscoveryClient implements EurekaClient {
                 // 请求server 获取所有实例信息,并保存到本地
                 getAndStoreFullRegistry();
             } else {
-                //
+                // 增量更新app的操作
                 getAndUpdateDelta(applications);
             }
             applications.setAppsHashCode(applications.getReconcileHashCode());
@@ -1009,6 +1009,7 @@ public class DiscoveryClient implements EurekaClient {
                 remoteApp.populateInstanceCountMap(instanceCountMap);
             }
         }
+        // 实例数量的更新
         applications.populateInstanceCountMap(instanceCountMap);
         return Applications.getReconcileHashCode(instanceCountMap);
     }
@@ -1091,6 +1092,7 @@ public class DiscoveryClient implements EurekaClient {
                 try {
                     // 更新增量数据
                     updateDelta(delta);
+                    // 实例数量更新
                     reconcileHashCode = getReconcileHashCode(applications);
                 } finally {
                     fetchRegistryUpdateLock.unlock();
@@ -1199,11 +1201,18 @@ public class DiscoveryClient implements EurekaClient {
     // 增量更新数据
     private void updateDelta(Applications delta) {
         int deltaCount = 0;
+        // 遍历所有增量的 app
         for (Application app : delta.getRegisteredApplications()) {
+            // 遍历app中的实例信息
             for (InstanceInfo instance : app.getInstances()) {
+                // 获取本地缓存的 app
                 Applications applications = getApplications();
+                // 检测
                 String instanceRegion = instanceRegionChecker.getInstanceRegion(instance);
+                // 如果不是本地的app,即 region不是本地
                 if (!instanceRegionChecker.isLocalRegion(instanceRegion)) {
+                    // 则查看remoteRegionVsApps中是否保存了对应的实例
+                    // 没有 保存,则添加到remoteRegionVsApps中
                     Applications remoteApps = remoteRegionVsApps.get(instanceRegion);
                     if (null == remoteApps) {
                         remoteApps = new Applications();
@@ -1213,37 +1222,43 @@ public class DiscoveryClient implements EurekaClient {
                 }
 
                 ++deltaCount;
+                // 如果动作是 添加
                 if (ActionType.ADDED.equals(instance.getActionType())) {
+                    // 查看此 instance 是否在 app中存在,不存在,则添加到app中
                     Application existingApp = applications.getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
                         applications.addApplication(app);
                     }
                     logger.debug("Added instance {} to the existing apps in region {}", instance.getId(), instanceRegion);
+                    // 实例添加
                     applications.getRegisteredApplications(instance.getAppName()).addInstance(instance);
+                    // 动作是修改
                 } else if (ActionType.MODIFIED.equals(instance.getActionType())) {
                     Application existingApp = applications.getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
                         applications.addApplication(app);
                     }
                     logger.debug("Modified instance {} to the existing apps ", instance.getId());
-
+                    // 添加操作
                     applications.getRegisteredApplications(instance.getAppName()).addInstance(instance);
-
+                // 动作是删除
                 } else if (ActionType.DELETED.equals(instance.getActionType())) {
                     Application existingApp = applications.getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
                         applications.addApplication(app);
                     }
                     logger.debug("Deleted instance {} to the existing apps ", instance.getId());
+                    // 删除操作
                     applications.getRegisteredApplications(instance.getAppName()).removeInstance(instance);
                 }
             }
         }
         logger.debug("The total number of instances fetched by the delta processor : {}", deltaCount);
-
+        // 本地缓存的app的 版本设置
         getApplications().setVersion(delta.getVersion());
+        //  本地app的 shuffle 动作
         getApplications().shuffleInstances(clientConfig.shouldFilterOnlyUpInstances());
-
+        // remote app的操作
         for (Applications applications : remoteRegionVsApps.values()) {
             applications.setVersion(delta.getVersion());
             applications.shuffleInstances(clientConfig.shouldFilterOnlyUpInstances());
