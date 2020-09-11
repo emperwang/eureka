@@ -35,21 +35,28 @@ public class Lease<T> {
     enum Action {
         Register, Cancel, Renew
     };
-
+    // 默认的租约信息  90s
     public static final int DEFAULT_DURATION_IN_SECS = 90;
-
+    // 对象
     private T holder;
+    // 此记录被 剔除 的时间
     private long evictionTimestamp;
+    // 注册的时间
     private long registrationTimestamp;
+    // 服务状态标记为 up时的时间
     private long serviceUpTimestamp;
     // Make it volatile so that the expiration task would see this quicker
     private volatile long lastUpdateTimestamp;
     private long duration;
-
+    // 租约信息
     public Lease(T r, int durationInSecs) {
+        // 此r 表示对象,此种的信息是关于此 r 对象的租约相关的时间信息
         holder = r;
+        // 注册时间
         registrationTimestamp = System.currentTimeMillis();
+        // 上次更新时间
         lastUpdateTimestamp = registrationTimestamp;
+        // 有效时间
         duration = (durationInSecs * 1000);
 
     }
@@ -59,6 +66,7 @@ public class Lease<T> {
      * associated {@link T} during registration, otherwise default duration is
      * {@link #DEFAULT_DURATION_IN_SECS}.
      */
+    // 更新租约
     public void renew() {
         lastUpdateTimestamp = System.currentTimeMillis() + duration;
 
@@ -78,6 +86,7 @@ public class Lease<T> {
      * subsequent calls will be ignored.
      */
     public void serviceUp() {
+        // 记录 service 状态标记为up的时间
         if (serviceUpTimestamp == 0) {
             serviceUpTimestamp = System.currentTimeMillis();
         }

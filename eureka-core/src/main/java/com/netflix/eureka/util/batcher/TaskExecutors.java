@@ -35,7 +35,8 @@ class TaskExecutors<ID, T> {
     TaskExecutors(WorkerRunnableFactory<ID, T> workerRunnableFactory, int workerCount, AtomicBoolean isShutdown) {
         this.isShutdown = isShutdown;
         this.workerThreads = new ArrayList<>();
-
+        // 创建了多个的线程去运行任务
+        // 具体的任务由 workerRunnableFactory.create创建
         ThreadGroup threadGroup = new ThreadGroup("eurekaTaskExecutors");
         for (int i = 0; i < workerCount; i++) {
             WorkerRunnable<ID, T> runnable = workerRunnableFactory.create(i);
@@ -74,7 +75,9 @@ class TaskExecutors<ID, T> {
                                                        final AcceptorExecutor<ID, T> acceptorExecutor) {
         final AtomicBoolean isShutdown = new AtomicBoolean();
         final TaskExecutorMetrics metrics = new TaskExecutorMetrics(name);
+        // 创建贵 TaskExceutors,并重写了其 create方法
         return new TaskExecutors<>(new WorkerRunnableFactory<ID, T>() {
+            // 这里的 BatchWorkerRunnable 就是具体处理业务的实现
             @Override
             public WorkerRunnable<ID, T> create(int idx) {
                 return new BatchWorkerRunnable<>("TaskBatchingWorker-" +name + '-' + idx, isShutdown, metrics, processor, acceptorExecutor);

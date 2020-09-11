@@ -159,12 +159,12 @@ public abstract class AbstractJerseyEurekaHttpClient implements EurekaHttpClient
             }
         }
     }
-
+    // 全量更新操作
     @Override
     public EurekaHttpResponse<Applications> getApplications(String... regions) {
         return getApplicationsInternal("apps/", regions);
     }
-
+    // 增量获取数据
     @Override
     public EurekaHttpResponse<Applications> getDelta(String... regions) {
         return getApplicationsInternal("apps/delta", regions);
@@ -179,18 +179,22 @@ public abstract class AbstractJerseyEurekaHttpClient implements EurekaHttpClient
     public EurekaHttpResponse<Applications> getSecureVip(String secureVipAddress, String... regions) {
         return getApplicationsInternal("svips/" + secureVipAddress, regions);
     }
-
+    // 获取数据,并返回结果
     private EurekaHttpResponse<Applications> getApplicationsInternal(String urlPath, String[] regions) {
         ClientResponse response = null;
         String regionsParamValue = null;
         try {
+            // 创建 jersey的客户端,准备进行访问
             WebResource webResource = jerseyClient.resource(serviceUrl).path(urlPath);
             if (regions != null && regions.length > 0) {
                 regionsParamValue = StringUtil.join(regions);
                 webResource = webResource.queryParam("regions", regionsParamValue);
             }
+            // request 的builder
             Builder requestBuilder = webResource.getRequestBuilder();
+            // 添加额外的请求 header
             addExtraHeaders(requestBuilder);
+            // 开始访问
             response = requestBuilder.accept(MediaType.APPLICATION_JSON_TYPE).get(ClientResponse.class);
 
             Applications applications = null;

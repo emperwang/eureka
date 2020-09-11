@@ -52,7 +52,7 @@ class AcceptorExecutor<ID, T> {
     private final long maxBatchingDelay;
 
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
-
+    // 队列存储 taskHolder
     private final BlockingQueue<TaskHolder<ID, T>> acceptorQueue = new LinkedBlockingQueue<>();
     private final BlockingDeque<TaskHolder<ID, T>> reprocessQueue = new LinkedBlockingDeque<>();
     private final Thread acceptorThread;
@@ -98,8 +98,9 @@ class AcceptorExecutor<ID, T> {
         this.maxBatchingSize = maxBatchingSize;
         this.maxBatchingDelay = maxBatchingDelay;
         this.trafficShaper = new TrafficShaper(congestionRetryDelayMs, networkFailureRetryMs);
-
+        // 创建一个线程 执行接收操作
         ThreadGroup threadGroup = new ThreadGroup("eurekaTaskExecutors");
+        // 对任务进一步处理
         this.acceptorThread = new Thread(threadGroup, new AcceptorRunner(), "TaskAcceptor-" + id);
         this.acceptorThread.setDaemon(true);
         this.acceptorThread.start();
@@ -120,7 +121,9 @@ class AcceptorExecutor<ID, T> {
     }
 
     void process(ID id, T task, long expiryTime) {
+        // 创建一个 TaskHolder 并放到 acceptorQueue队列中
         acceptorQueue.add(new TaskHolder<ID, T>(id, task, expiryTime));
+        // 计数增加
         acceptedTasks++;
     }
 
@@ -209,7 +212,7 @@ class AcceptorExecutor<ID, T> {
                 }
             }
         }
-
+        // 是否满了; 等待任务书 大于等于 最大buffer大小
         private boolean isFull() {
             return pendingTasks.size() >= maxBufferSize;
         }
@@ -224,6 +227,7 @@ class AcceptorExecutor<ID, T> {
                     if (reprocessQueue.isEmpty() && acceptorQueue.isEmpty() && pendingTasks.isEmpty()) {
                         TaskHolder<ID, T> taskHolder = acceptorQueue.poll(10, TimeUnit.MILLISECONDS);
                         if (taskHolder != null) {
+                            // 把 acceptorQueue中的任务放置到 pendingTask中
                             appendTaskHolder(taskHolder);
                         }
                     }
@@ -256,8 +260,9 @@ class AcceptorExecutor<ID, T> {
                 reprocessQueue.clear();
             }
         }
-
+        // 把任务放置到 pendingTask中
         private void appendTaskHolder(TaskHolder<ID, T> taskHolder) {
+            // 是否满了
             if (isFull()) {
                 pendingTasks.remove(processingOrder.poll());
                 queueOverflows++;
