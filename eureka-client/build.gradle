@@ -1,5 +1,5 @@
-apply plugin: 'nebula.test-jar'
 apply plugin: 'provided-base'
+//apply plugin: 'nebula.test-jar'
 
 dependencies {
     compile "com.netflix.netflix-commons:netflix-eventbus:0.3.0"

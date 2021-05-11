@@ -1,5 +1,10 @@
 buildscript {
-    repositories { jcenter() }
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter'}
+        jcenter() }
 
     dependencies {
         classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:2.2.+'
@@ -7,14 +12,14 @@ buildscript {
 }
 
 plugins {
-    id 'nebula.netflixoss' version '3.2.3'
+//    id 'nebula.netflixoss' version '3.2.3'
 }
 
-idea {
+/*idea {
     project {
         languageLevel = '1.7'
     }
-}
+}*/
 
 if (JavaVersion.current().isJava8Compatible()) {
     allprojects {
@@ -49,15 +54,19 @@ allprojects {
 }
 
 subprojects {
-    apply plugin: 'nebula.netflixoss'
+//    apply plugin: 'nebula.netflixoss'
     apply plugin: 'java'
 
     group = "com.netflix.${githubProjectName}"
 
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
     repositories {
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter'}
         jcenter()
     }
 
