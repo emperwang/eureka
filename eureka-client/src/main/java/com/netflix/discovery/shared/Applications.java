@@ -69,14 +69,16 @@ public class Applications {
     private static final String APP_INSTANCEID_DELIMITER = "$$";
     private static final Logger logger = LoggerFactory.getLogger(Applications.class);
     private static final String STATUS_DELIMITER = "_";
-
+    // version信息  防止脏数据
     private Long versionDelta = Long.valueOf(-1);
-
+    // 从容器保存所有的app信息
     @XStreamImplicit
     private AbstractQueue<Application> applications;
-
+    // 这里保存 appName 和 app 的映射关系
     private Map<String, Application> appNameApplicationMap = new ConcurrentHashMap<String, Application>();
+    // 这里保存的是 vipAddress 和一组instance的映射关系
     private Map<String, AbstractQueue<InstanceInfo>> virtualHostNameAppMap = new ConcurrentHashMap<String, AbstractQueue<InstanceInfo>>();
+    // 同样是 vipaddress 和一组 instance的映射关系
     private Map<String, AbstractQueue<InstanceInfo>> secureVirtualHostNameAppMap = new ConcurrentHashMap<String, AbstractQueue<InstanceInfo>>();
     private Map<String, AtomicLong> virtualHostNameIndexMap = new ConcurrentHashMap<String, AtomicLong>();
     private Map<String, AtomicLong> secureVirtualHostNameIndexMap = new ConcurrentHashMap<String, AtomicLong>();
@@ -90,6 +92,7 @@ public class Applications {
      * Create a new, empty Eureka application list.
      */
     public Applications() {
+        // 初始化一个容器, 用于保存 application信息
         this.applications = new ConcurrentLinkedQueue<Application>();
     }
 
@@ -101,11 +104,15 @@ public class Applications {
             @JsonProperty("appsHashCode") String appsHashCode,
             @JsonProperty("versionDelta") Long versionDelta,
             @JsonProperty("application") List<Application> registeredApplications) {
+        // 初始化容器
         this.applications = new ConcurrentLinkedQueue<Application>();
+        // 遍历 application 保存到容器中
         for (Application app : registeredApplications) {
             this.addApplication(app);
         }
+        // app的hashcode, 用于一致性检测
         this.appsHashCode = appsHashCode;
+        // 保存一个version, 防止脏数据
         this.versionDelta = versionDelta;
     }
 
@@ -127,8 +134,11 @@ public class Applications {
      *            the <em>application</em> to be added.
      */
     public void addApplication(Application app) {
+        // appname 和 app的映射关系
         appNameApplicationMap.put(app.getName().toUpperCase(Locale.ROOT), app);
+        // vipaddress 和 instance 的映射关系
         addInstancesToVIPMaps(app);
+        // 保存app
         applications.add(app);
     }
 
@@ -138,6 +148,7 @@ public class Applications {
      *
      * @return list containing all applications registered with eureka.
      */
+    // 获取所有的 注册的app
     @JsonProperty("application")
     public List<Application> getRegisteredApplications() {
         List<Application> list = new ArrayList<Application>();
@@ -154,6 +165,7 @@ public class Applications {
      * @return the list of registered applications for the given application
      *         name.
      */
+    // 根据名字类获取对应的 app
     public Application getRegisteredApplications(String appName) {
         return appNameApplicationMap.get(appName.toUpperCase(Locale.ROOT));
     }
@@ -166,6 +178,7 @@ public class Applications {
      *            returned.
      * @return list of <em>instances</em>.
      */
+    // 根据hostname 类获取instance信息
     public List<InstanceInfo> getInstancesByVirtualHostName(String virtualHostName) {
         AtomicReference<List<InstanceInfo>> ref = this.shuffleVirtualHostNameMap
                 .get(virtualHostName.toUpperCase(Locale.ROOT));
@@ -198,6 +211,7 @@ public class Applications {
     /**
      * @return a weakly consistent size of the number of instances in all the applications
      */
+    // 这里是获取的所有的 instance的数量和
     public int size() {
         int result = 0;
         for (Application application : applications) {
@@ -433,6 +447,7 @@ public class Applications {
                                   @Nullable InstanceRegionChecker instanceRegionChecker) {
         this.virtualHostNameAppMap.clear();
         this.secureVirtualHostNameAppMap.clear();
+        // 把instance 乱序
         for (Application application : appNameApplicationMap.values()) {
             if (indexByRemoteRegions) {
                 application.shuffleAndStoreInstances(remoteRegionsRegistry, clientConfig, instanceRegionChecker);
@@ -521,8 +536,10 @@ public class Applications {
                 AbstractQueue<InstanceInfo> instanceInfoList = vipMap.get(vipName);
                 if (instanceInfoList == null) {
                     instanceInfoList = new ConcurrentLinkedQueue<InstanceInfo>();
+                    // 这里保存的是 vipAddress 和 一组instance的映射关系
                     vipMap.put(vipName, instanceInfoList);
                 }
+                // 保存 instance 信息
                 instanceInfoList.add(info);
             }
         }
@@ -532,15 +549,18 @@ public class Applications {
      * Adds the instances to the internal vip address map.
      * @param app - the applications for which the instances need to be added.
      */
+    // 这里是保存信息的 vip 和 secureVip 信息和 app的映射关系
     private void addInstancesToVIPMaps(Application app) {
         // Check and add the instances to the their respective virtual host name
         // mappings
+        // 遍历app中的所有 instance 信息
         for (InstanceInfo info : app.getInstances()) {
             String vipAddresses = info.getVIPAddress();
             String secureVipAddresses = info.getSecureVipAddress();
             if ((vipAddresses == null) && (secureVipAddresses == null)) {
                 continue;
             }
+            // 下面是保存 vipaddress  和 一组 instance的映射关系
             addInstanceToMap(info, vipAddresses, virtualHostNameAppMap);
             addInstanceToMap(info, secureVipAddresses,
                     secureVirtualHostNameAppMap);

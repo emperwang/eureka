@@ -26,6 +26,7 @@ import com.netflix.appinfo.InstanceInfo;
  * @param <T> for backward compatibility
 
  */
+// 用于服务发现的 顶层功能接口
 public interface LookupService<T> {
 
     /**

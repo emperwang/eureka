@@ -25,6 +25,7 @@ import com.netflix.discovery.shared.LookupService;
  *
  * @author David Liu
  */
+// 服务发现的扩展功能接口
 @ImplementedBy(DiscoveryClient.class)
 public interface EurekaClient extends LookupService {
 

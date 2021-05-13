@@ -82,27 +82,29 @@ public class InstanceInfo {
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceInfo.class);
     private static final Pattern VIP_ATTRIBUTES_PATTERN = Pattern.compile("\\$\\{(.*?)\\}");
-
+    // 默认端口号
     public static final int DEFAULT_PORT = 7001;
     public static final int DEFAULT_SECURE_PORT = 7002;
     public static final int DEFAULT_COUNTRY_ID = 1; // US
 
     // The (fixed) instanceId for this instanceInfo. This should be unique within the scope of the appName.
+    // instanceId
     private volatile String instanceId;
-
+    // 应用名字
     private volatile String appName;
+    // app 组名字
     @Auto
     private volatile String appGroupName;
-
+    // ip地址
     private volatile String ipAddr;
 
     private static final String SID_DEFAULT = "na";
     @Deprecated
     private volatile String sid = SID_DEFAULT;
-
+    // 端口号
     private volatile int port = DEFAULT_PORT;
     private volatile int securePort = DEFAULT_SECURE_PORT;
-
+    // 下面都是 instance的一些信息
     @Auto
     private volatile String homePageUrl;
     @Auto
@@ -135,19 +137,23 @@ public class InstanceInfo {
     private volatile boolean isUnsecurePortEnabled = true;
     private volatile DataCenterInfo dataCenterInfo;
     private volatile String hostName;
+    // instance状态
     private volatile InstanceStatus status = InstanceStatus.UP;
     private volatile InstanceStatus overriddenstatus = InstanceStatus.UNKNOWN;
     @XStreamOmitField
     private volatile boolean isInstanceInfoDirty = false;
+    // instance 租期信息
     private volatile LeaseInfo leaseInfo;
     @Auto
     private volatile Boolean isCoordinatingDiscoveryServer = Boolean.FALSE;
     @XStreamAlias("metadata")
     private volatile Map<String, String> metadata = new ConcurrentHashMap<String, String>();
+    // 上次更新时间
     @Auto
     private volatile Long lastUpdatedTimestamp = System.currentTimeMillis();
     @Auto
     private volatile Long lastDirtyTimestamp = System.currentTimeMillis();
+    // 操作类型
     @Auto
     private volatile ActionType actionType;
     @Auto
@@ -352,7 +358,7 @@ public class InstanceInfo {
     public enum PortType {
         SECURE, UNSECURE
     }
-
+    // 这是一个用于构建 InstanceInfo的 构建类
     public static final class Builder {
         private static final String COLON = ":";
         private static final String HTTPS_PROTOCOL = "https://";

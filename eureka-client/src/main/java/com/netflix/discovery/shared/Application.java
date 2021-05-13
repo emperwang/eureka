@@ -59,12 +59,12 @@ public class Application {
                 + ", instances=" + instances + ", shuffledInstances="
                 + shuffledInstances + ", instancesMap=" + instancesMap + "]";
     }
-
+    // app的name
     private String name;
 
     @XStreamOmitField
     private volatile boolean isDirty = false;
-
+    // 一个app对应多个 instance 实例信息
     @XStreamImplicit
     private final Set<InstanceInfo> instances;
 
@@ -73,11 +73,13 @@ public class Application {
     private Map<String, InstanceInfo> instancesMap;
 
     public Application() {
+        // 初始化容器
         instances = new LinkedHashSet<InstanceInfo>();
         instancesMap = new ConcurrentHashMap<String, InstanceInfo>();
     }
 
     public Application(String name) {
+        // 设置 appName 以及容器初始化
         this.name = StringCache.intern(name);
         instancesMap = new ConcurrentHashMap<String, InstanceInfo>();
         instances = new LinkedHashSet<InstanceInfo>();
@@ -88,6 +90,7 @@ public class Application {
             @JsonProperty("name") String name,
             @JsonProperty("instance") List<InstanceInfo> instances) {
         this(name);
+        // 保存 instance 实例信息到容器中
         for (InstanceInfo instanceInfo : instances) {
             addInstance(instanceInfo);
         }
@@ -100,8 +103,10 @@ public class Application {
      *            the instance info object to be added.
      */
     public void addInstance(InstanceInfo i) {
+        // 保存 instanceId 和 instance的映射关系
         instancesMap.put(i.getId(), i);
         synchronized (instances) {
+            // 保存instance 到 容器中
             instances.remove(i);
             instances.add(i);
             isDirty = true;
@@ -158,6 +163,7 @@ public class Application {
      *            the id for which the instance info needs to be returned.
      * @return the instance info object.
      */
+    // 根据id 获取对应的instance 信息
     public InstanceInfo getByInstanceId(String id) {
         return instancesMap.get(id);
     }
@@ -184,6 +190,7 @@ public class Application {
     /**
      * @return the number of instances in this application
      */
+    // 获取instance的 数量
     public int size() {
         return instances.size();
     }
@@ -205,7 +212,7 @@ public class Application {
         _shuffleAndStoreInstances(clientConfig.shouldFilterOnlyUpInstances(), true, remoteRegionsRegistry, clientConfig,
                 instanceRegionChecker);
     }
-
+    // 把instance 乱序存储
     private void _shuffleAndStoreInstances(boolean filterUpInstances, boolean indexByRemoteRegions,
                                            @Nullable Map<String, Applications> remoteRegionsRegistry,
                                            @Nullable EurekaClientConfig clientConfig,
@@ -245,10 +252,12 @@ public class Application {
             }
 
         }
+        // 乱序 instance
         Collections.shuffle(instanceInfoList);
+        // 记录乱序后的 instance
         this.shuffledInstances.set(instanceInfoList);
     }
-
+    // 移除instance 信息
     private void removeInstance(InstanceInfo i, boolean markAsDirty) {
         instancesMap.remove(i.getId());
         synchronized (instances) {

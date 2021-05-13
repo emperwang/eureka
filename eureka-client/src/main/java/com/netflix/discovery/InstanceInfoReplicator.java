@@ -35,6 +35,7 @@ class InstanceInfoReplicator implements Runnable {
     private final AtomicReference<Future> scheduledPeriodicRef;
 
     private final AtomicBoolean started;
+    // 限流操作
     private final RateLimiter rateLimiter;
     private final int burstSize;
     private final int allowedRatePerMinute;
@@ -62,6 +63,8 @@ class InstanceInfoReplicator implements Runnable {
     public void start(int initialDelayMs) {
         if (started.compareAndSet(false, true)) {
             instanceInfo.setIsDirty();  // for initial register
+            // 提交自身到 线程池中执行
+            // 监控自身信息是否改变, 如果改变,则会发送信息到server进行更新
             Future next = scheduler.schedule(this, initialDelayMs, TimeUnit.SECONDS);
             scheduledPeriodicRef.set(next);
         }
@@ -73,7 +76,9 @@ class InstanceInfoReplicator implements Runnable {
     }
 
     public boolean onDemandUpdate() {
+        // 限流操作
         if (rateLimiter.acquire(burstSize, allowedRatePerMinute)) {
+            // 提交任务到线程池中操作
             scheduler.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -84,7 +89,7 @@ class InstanceInfoReplicator implements Runnable {
                         logger.debug("Canceling the latest scheduled update, it will be rescheduled at the end of on demand update");
                         latestPeriodic.cancel(false);
                     }
-
+                    // 自身信息改变,则会向 server发送自身信息
                     InstanceInfoReplicator.this.run();
                 }
             });
@@ -97,16 +102,19 @@ class InstanceInfoReplicator implements Runnable {
 
     public void run() {
         try {
+            // 刷新 自身的instanceInfo
             discoveryClient.refreshInstanceInfo();
 
             Long dirtyTimestamp = instanceInfo.isDirtyWithTime();
             if (dirtyTimestamp != null) {
+                // 向 server 进行自身信息注册
                 discoveryClient.register();
                 instanceInfo.unsetIsDirty(dirtyTimestamp);
             }
         } catch (Throwable t) {
             logger.warn("There was a problem with the instance info replicator", t);
         } finally {
+            // 提交任务 下次执行
             Future next = scheduler.schedule(this, replicationIntervalSeconds, TimeUnit.SECONDS);
             scheduledPeriodicRef.set(next);
         }

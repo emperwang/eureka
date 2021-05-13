@@ -41,9 +41,11 @@ public class TimedSupervisorTask extends TimerTask {
 
     public TimedSupervisorTask(String name, ScheduledExecutorService scheduler, ThreadPoolExecutor executor,
                                int timeout, TimeUnit timeUnit, int expBackOffBound, Runnable task) {
+        // 线程池
         this.scheduler = scheduler;
         this.executor = executor;
         this.timeoutMillis = timeUnit.toMillis(timeout);
+        // 要执行的执行
         this.task = task;
         this.delay = new AtomicLong(timeoutMillis);
         this.maxDelay = timeoutMillis * expBackOffBound;
@@ -59,6 +61,7 @@ public class TimedSupervisorTask extends TimerTask {
     public void run() {
         Future future = null;
         try {
+            // 提交任务到线程池中 去进行
             future = executor.submit(task);
             threadPoolLevelGauge.set((long) executor.getActiveCount());
             future.get(timeoutMillis, TimeUnit.MILLISECONDS);  // block until done or timeout
@@ -82,6 +85,7 @@ public class TimedSupervisorTask extends TimerTask {
             if (future != null) {
                 future.cancel(true);
             }
+            //最后 再次提交任务
             scheduler.schedule(this, delay.get(), TimeUnit.MILLISECONDS);
         }
     }
